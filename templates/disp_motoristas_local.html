@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Disponibilidade • Motoristas</h1>
+<p><b>Data:</b> {{ data_ref.strftime("%d/%m/%Y") }}</p>
+
+<button id="btnSalvar">Salvar</button>
+
+<table>
+  <thead>
+    <tr>
+      <th>Disponível</th><th>Base</th><th>Motorista</th><th>Obs</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for m in motoristas %}
+    <tr data-nome="{{ m.nome }}">
+      <td><input type="checkbox" class="chk" checked></td>
+      <td>{{ m.base }}</td>
+      <td>{{ m.nome }}</td>
+      <td><input class="obs" placeholder="Obs"></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<script>
+  const key = "oliveira_disp_motoristas_" + "{{ data_ref.isoformat() }}";
+
+  function load() {
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    document.querySelectorAll("tr[data-nome]").forEach(tr => {
+      const nome = tr.dataset.nome;
+      const saved = data[nome];
+      if (!saved) return;
+      tr.querySelector(".chk").checked = !!saved.disponivel;
+      tr.querySelector(".obs").value = saved.obs || "";
+    });
+  }
+
+  function save() {
+    const data = {};
+    document.querySelectorAll("tr[data-nome]").forEach(tr => {
+      const nome = tr.dataset.nome;
+      data[nome] = {
+        disponivel: tr.querySelector(".chk").checked,
+        obs: tr.querySelector(".obs").value || ""
+      };
+    });
+    localStorage.setItem(key, JSON.stringify(data));
+    alert("Disponibilidade salva neste dispositivo/navegador ✅");
+  }
+
+  document.getElementById("btnSalvar").addEventListener("click", save);
+  load();
+</script>
+{% endblock %}
