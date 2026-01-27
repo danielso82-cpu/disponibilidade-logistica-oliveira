@@ -9,24 +9,29 @@
   <table>
     <thead>
       <tr>
-        <th>Base</th><th>Tipo</th><th>Placa</th><th>Modelo</th><th>Status</th><th>Liberação</th><th>Obs</th>
+        <th>Disponível</th><th>Base</th><th>Tipo</th><th>Placa</th><th>Modelo</th>
+        <th>Status (se não disponível)</th><th>Liberação</th><th>Obs</th>
       </tr>
     </thead>
     <tbody>
       {% for v in veiculos %}
         {% set r = regs_map.get(v.id) %}
+        {% set is_disp = (r is none) or (r.status == "Disponível") %}
         <tr>
+          <td>
+            <input type="hidden" name="veiculo_id" value="{{ v.id }}">
+            <input type="checkbox" name="disponivel_veic" value="{{ v.id }}" class="chk-disp" {% if is_disp %}checked{% endif %}>
+          </td>
           <td>{{ v.base }}</td>
           <td>{{ v.tipo_rodado }}</td>
           <td>{{ v.placa }}</td>
           <td>{{ v.modelo or "" }}</td>
 
           <td>
-            <input type="hidden" name="veiculo_id" value="{{ v.id }}">
-            <select name="status">
-              {% set val = (r.status if r else "Disponível") %}
-              {% for s in ["Disponível","Manutenção","Quebrado","Documento","Uso Parcial"] %}
-                <option {{ "selected" if s==val else "" }}>{{ s }}</option>
+            <select name="status" class="sel-status">
+              {% set val = (r.status if r else "Manutenção") %}
+              {% for s in ["Manutenção","Quebrado","Documento","Uso Parcial"] %}
+                <option {% if s==val %}selected{% endif %}>{{ s }}</option>
               {% endfor %}
             </select>
           </td>
@@ -39,4 +44,24 @@
 
   <button type="submit">Salvar</button>
 </form>
+
+<script>
+  function refreshRow(row){
+    const chk = row.querySelector('.chk-disp');
+    const sel = row.querySelector('.sel-status');
+    if(chk.checked){
+      sel.disabled = true;
+      sel.style.opacity = 0.5;
+    } else {
+      sel.disabled = false;
+      sel.style.opacity = 1;
+    }
+  }
+  document.querySelectorAll('tr').forEach(tr => {
+    const chk = tr.querySelector('.chk-disp');
+    if(!chk) return;
+    refreshRow(tr);
+    chk.addEventListener('change', () => refreshRow(tr));
+  });
+</script>
 {% endblock %}
