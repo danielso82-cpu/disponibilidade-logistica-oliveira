@@ -25,46 +25,39 @@ def create_app():
         return render_template("index.html", data_ref=data_ref)
 
     # ---------------- Motoristas ----------------
-    @app.get("/motoristas")
-    def motoristas():
-        lista = Motorista.query.order_by(Motorista.base, Motorista.nome).all()
-        return render_template("motoristas.html", lista=lista)
+    @app.get("/disponibilidade/motoristas")
+def disp_motoristas():
+    d = request.args.get("data")
+    if not d:
+        return redirect(url_for("index"))
+    data_ref = parse_date(d)
 
-    @app.post("/motoristas/novo")
-    def motoristas_novo():
-        nome = request.form.get("nome","").strip()
-        base = request.form.get("base","").strip()
-        cnh = request.form.get("cnh_categoria","").strip()
-        if not nome or not base:
-            flash("Nome e Base são obrigatórios.", "error")
-            return redirect(url_for("motoristas"))
-        db.session.add(Motorista(nome=nome, base=base, cnh_categoria=cnh))
-        db.session.commit()
-        flash("Motorista cadastrado.", "ok")
-        return redirect(url_for("motoristas"))
+    motoristas = Motorista.query.order_by(Motorista.base, Motorista.nome).all()
+    regs = DispMotoristaDia.query.filter_by(data_operacao=data_ref).all()
+    regs_map = {r.motorista_id: r for r in regs}
+
+    return render_template(
+        "disp_motoristas.html",
+        data_ref=data_ref,
+        motoristas=motoristas,
+        regs_map=regs_map,
+    )
+
 
     # ---------------- Veículos ----------------
-    @app.get("/veiculos")
-    def veiculos():
-        lista = Veiculo.query.order_by(Veiculo.base, Veiculo.tipo_rodado, Veiculo.placa).all()
-        return render_template("veiculos.html", lista=lista, tipos=TIPOS_RODADO)
+    @app.get("/disponibilidade/veiculos")
+def disp_veiculos():
+    d = request.args.get("data")
+    if not d:
+        return redirect(url_for("index"))
+    data_ref = parse_date(d)
 
-    @app.post("/veiculos/novo")
-    def veiculos_novo():
-        placa = request.form.get("placa","").strip().upper()
-        modelo = request.form.get("modelo","").strip()
-        base = request.form.get("base","").strip()
-        tipo = request.form.get("tipo_rodado","").strip()
-        if not placa or not base or not tipo:
-            flash("Placa, Base e Tipo Rodado são obrigatórios.", "error")
-            return redirect(url_for("veiculos"))
-        if Veiculo.query.filter_by(placa=placa).first():
-            flash("Já existe veículo com essa placa.", "error")
-            return redirect(url_for("veiculos"))
-        db.session.add(Veiculo(placa=placa, modelo=modelo, base=base, tipo_rodado=tipo))
-        db.session.commit()
-        flash("Veículo cadastrado.", "ok")
-        return redirect(url_for("veiculos"))
+    veiculos = Veiculo.query.order_by(Veiculo.base, Veiculo.tipo_rodado, Veiculo.placa).all()
+    regs = DispVeiculo.query.filter_by(data_operacao=data_ref).all()
+    regs_map = {r.veiculo_id: r for r in regs}
+
+    return render_template("disp_veiculos.html", data_ref=data_ref, veiculos=veiculos, regs_map=regs_map)
+
 
     # ---------------- Disponibilidade Motoristas ----------------
     @app.get("/disponibilidade/motoristas")
@@ -87,36 +80,42 @@ def create_app():
         )
 
     @app.post("/disponibilidade/motoristas/salvar")
-    def disp_motoristas_salvar():
-        data_ref = parse_date(request.form["data_operacao"])
+    @app.post("/disponibilidade/motoristas/salvar")
+def disp_motoristas_salvar():
+    data_ref = parse_date(request.form["data_operacao"])
 
-        # estratégia: limpar e recriar do dia (simples e robusto para MVP)
-        DispMotorista.query.filter_by(data_operacao=data_ref).delete()
-        db.session.commit()
+    # limpa e recria o dia (MVP simples e robusto)
+    DispMotoristaDia.query.filter_by(data_operacao=data_ref).delete()
+    db.session.commit()
 
-        # campos vêm como listas paralelas
-        motorista_ids = request.form.getlist("motorista_id")
-        tipos = request.form.getlist("tipo_rodado")
-        statuses = request.form.getlist("status")
-        periodos = request.form.getlist("periodo")
-        obs_list = request.form.getlist("obs")
+    motorista_ids = request.form.getlist("motorista_id")
+    disponiveis = set(request.form.getlist("disponivel"))  # ids marcados
 
-        for mid, t, st, p, ob in zip(motorista_ids, tipos, statuses, periodos, obs_list):
-            if not mid or not t or not st:
-                continue
-            db.session.add(
-                DispMotorista(
-                    data_operacao=data_ref,
-                    motorista_id=int(mid),
-                    tipo_rodado=t,
-                    status=st,
-                    periodo=p or None,
-                    obs=(ob or "").strip() or None,
-                )
+    statuses = request.form.getlist("status")
+    periodos = request.form.getlist("periodo")
+    obs_list = request.form.getlist("obs")
+
+    for mid, st, p, ob in zip(motorista_ids, statuses, periodos, obs_list):
+        # se está marcado como disponível, força status "Disponível"
+        if mid in disponiveis:
+            st_final = "Disponível"
+        else:
+            st_final = st or "Falta"
+
+        db.session.add(
+            DispMotoristaDia(
+                data_operacao=data_ref,
+                motorista_id=int(mid),
+                status=st_final,
+                periodo=(p or None),
+                obs=(ob or "").strip() or None,
             )
-        db.session.commit()
-        flash("Disponibilidade de motoristas salva.", "ok")
-        return redirect(url_for("disp_motoristas", data=data_ref.isoformat()))
+        )
+
+    db.session.commit()
+    flash("Disponibilidade de motoristas salva.", "ok")
+    return redirect(url_for("disp_motoristas", data=data_ref.isoformat()))
+
 
     # ---------------- Disponibilidade Veículos ----------------
     @app.get("/disponibilidade/veiculos")
@@ -138,32 +137,38 @@ def create_app():
         )
 
     @app.post("/disponibilidade/veiculos/salvar")
-    def disp_veiculos_salvar():
-        data_ref = parse_date(request.form["data_operacao"])
+def disp_veiculos_salvar():
+    data_ref = parse_date(request.form["data_operacao"])
 
-        DispVeiculo.query.filter_by(data_operacao=data_ref).delete()
-        db.session.commit()
+    DispVeiculo.query.filter_by(data_operacao=data_ref).delete()
+    db.session.commit()
 
-        veiculo_ids = request.form.getlist("veiculo_id")
-        statuses = request.form.getlist("status")
-        previsoes = request.form.getlist("previsao_liberacao")
-        obs_list = request.form.getlist("obs")
+    veiculo_ids = request.form.getlist("veiculo_id")
+    disponiveis = set(request.form.getlist("disponivel_veic"))
 
-        for vid, st, pr, ob in zip(veiculo_ids, statuses, previsoes, obs_list):
-            if not vid or not st:
-                continue
-            db.session.add(
-                DispVeiculo(
-                    data_operacao=data_ref,
-                    veiculo_id=int(vid),
-                    status=st,
-                    previsao_liberacao=(pr or "").strip() or None,
-                    obs=(ob or "").strip() or None,
-                )
+    statuses = request.form.getlist("status")
+    previsoes = request.form.getlist("previsao_liberacao")
+    obs_list = request.form.getlist("obs")
+
+    for vid, st, pr, ob in zip(veiculo_ids, statuses, previsoes, obs_list):
+        if vid in disponiveis:
+            st_final = "Disponível"
+        else:
+            st_final = st or "Manutenção"
+
+        db.session.add(
+            DispVeiculo(
+                data_operacao=data_ref,
+                veiculo_id=int(vid),
+                status=st_final,
+                previsao_liberacao=(pr or "").strip() or None,
+                obs=(ob or "").strip() or None,
             )
-        db.session.commit()
-        flash("Disponibilidade de veículos salva.", "ok")
-        return redirect(url_for("disp_veiculos", data=data_ref.isoformat()))
+        )
+
+    db.session.commit()
+    flash("Disponibilidade de veículos salva.", "ok")
+    return redirect(url_for("disp_veiculos", data=data_ref.isoformat()))
 
     # ---------------- Consolidado ----------------
     @app.get("/consolidado")
@@ -215,4 +220,5 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
     app.run(debug=True)
+
 
