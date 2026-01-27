@@ -40,3 +40,14 @@ class DispVeiculo(db.Model):
     obs = db.Column(db.String(300), nullable=True)
 
     veiculo = db.relationship("Veiculo")
+
+class DispMotoristaDia(db.Model):
+    __tablename__ = "disp_motoristas_dia"
+    id = db.Column(db.Integer, primary_key=True)
+    data_operacao = db.Column(db.Date, nullable=False, index=True)
+    motorista_id = db.Column(db.Integer, db.ForeignKey("motoristas.id"), nullable=False, index=True)
+    status = db.Column(db.String(30), nullable=False)  # Disponível, Folga, Férias, Atestado, Falta, Restrição
+    periodo = db.Column(db.String(20), nullable=True)  # Integral/Manhã/Tarde
+    obs = db.Column(db.String(300), nullable=True)
+
+    motorista = db.relationship("Motorista")
