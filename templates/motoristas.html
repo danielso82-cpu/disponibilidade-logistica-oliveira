@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Motoristas</h1>
+
+<form method="post" action="{{ url_for('motoristas_novo') }}" class="form">
+  <input name="nome" placeholder="Nome do motorista" required>
+  <select name="base" required>
+    <option value="">Base...</option>
+    <option>Rio Tavares</option>
+    <option>Costeira</option>
+  </select>
+  <input name="cnh_categoria" placeholder="CNH (B/C/D)">
+  <button type="submit">Adicionar</button>
+</form>
+
+<table>
+  <thead><tr><th>Base</th><th>Nome</th><th>CNH</th></tr></thead>
+  <tbody>
+    {% for m in lista %}
+      <tr><td>{{ m.base }}</td><td>{{ m.nome }}</td><td>{{ m.cnh_categoria or "" }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

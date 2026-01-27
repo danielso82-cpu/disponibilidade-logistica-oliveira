@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Veículos</h1>
+
+<form method="post" action="{{ url_for('veiculos_novo') }}" class="form">
+  <input name="placa" placeholder="Placa" required>
+  <input name="modelo" placeholder="Modelo (opcional)">
+  <select name="base" required>
+    <option value="">Base...</option>
+    <option>Rio Tavares</option>
+    <option>Costeira</option>
+  </select>
+  <select name="tipo_rodado" required>
+    <option value="">Tipo Rodado...</option>
+    {% for t in tipos %}<option>{{ t }}</option>{% endfor %}
+  </select>
+  <button type="submit">Adicionar</button>
+</form>
+
+<table>
+  <thead><tr><th>Base</th><th>Tipo</th><th>Placa</th><th>Modelo</th></tr></thead>
+  <tbody>
+    {% for v in lista %}
+      <tr><td>{{ v.base }}</td><td>{{ v.tipo_rodado }}</td><td>{{ v.placa }}</td><td>{{ v.modelo or "" }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
