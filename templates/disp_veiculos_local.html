@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Disponibilidade • Veículos</h1>
+<p><b>Data:</b> {{ data_ref.strftime("%d/%m/%Y") }}</p>
+
+<button id="btnSalvar">Salvar</button>
+
+<table>
+  <thead>
+    <tr>
+      <th>Disponível</th><th>Base</th><th>Tipo</th><th>Placa</th><th>Modelo</th><th>Obs</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for v in veiculos %}
+    <tr data-placa="{{ v.placa }}">
+      <td><input type="checkbox" class="chk" checked></td>
+      <td>{{ v.base }}</td>
+      <td>{{ v.tipo }}</td>
+      <td>{{ v.placa }}</td>
+      <td>{{ v.modelo }}</td>
+      <td><input class="obs" placeholder="Obs"></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<script>
+  const key = "oliveira_disp_veiculos_" + "{{ data_ref.isoformat() }}";
+
+  function load() {
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    document.querySelectorAll("tr[data-placa]").forEach(tr => {
+      const placa = tr.dataset.placa;
+      const saved = data[placa];
+      if (!saved) return;
+      tr.querySelector(".chk").checked = !!saved.disponivel;
+      tr.querySelector(".obs").value = saved.obs || "";
+    });
+  }
+
+  function save() {
+    const data = {};
+    document.querySelectorAll("tr[data-placa]").forEach(tr => {
+      const placa = tr.dataset.placa;
+      data[placa] = {
+        disponivel: tr.querySelector(".chk").checked,
+        obs: tr.querySelector(".obs").value || ""
+      };
+    });
+    localStorage.setItem(key, JSON.stringify(data));
+    alert("Disponibilidade salva neste dispositivo/navegador ✅");
+  }
+
+  document.getElementById("btnSalvar").addEventListener("click", save);
+  load();
+</script>
+{% endblock %}
