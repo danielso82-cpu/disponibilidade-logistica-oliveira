@@ -190,13 +190,13 @@ def disp_veiculos_salvar():
         veic_map = {t: c for t, c in veiculos_disp}
 
         # Motoristas disponíveis por tipo
-        mot_disp = (
-            db.session.query(DispMotorista.tipo_rodado, db.func.count(DispMotorista.id))
-            .filter(DispMotorista.data_operacao == data_ref)
-            .filter(DispMotorista.status == "Disponível")
-            .group_by(DispMotorista.tipo_rodado)
-            .all()
-        )
+mot_disp = (
+    db.session.query(DispMotoristaDia.status, db.func.count(DispMotoristaDia.id))
+    .filter(DispMotoristaDia.data_operacao == data_ref)
+    .filter(DispMotoristaDia.status == "Disponível")
+    .count()
+)
+
         mot_map = {t: c for t, c in mot_disp}
 
         linhas = []
@@ -220,5 +220,6 @@ def disp_veiculos_salvar():
 if __name__ == "__main__":
     app = create_app()
     app.run(debug=True)
+
 
 
