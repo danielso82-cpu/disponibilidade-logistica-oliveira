@@ -1,4 +1,19 @@
-body {
-  font-family: Arial, sans-serif;
-  background: #f4f6f7;
-}
+body { font-family: Arial, sans-serif; margin:0; background:#f6f7f8; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+.topbar { background:#0b5; color:#fff; }
+.topbar .wrap { display:flex; align-items:center; justify-content:space-between; }
+.brand { font-weight:700; }
+.nav a { color:#fff; text-decoration:none; margin-left:14px; }
+h1 { margin-top: 8px; }
+.form { display:flex; gap:10px; flex-wrap:wrap; margin: 12px 0; }
+input, select, button { padding:8px; border:1px solid #ccc; border-radius:8px; }
+button { cursor:pointer; }
+table { width:100%; border-collapse: collapse; background:#fff; border-radius:12px; overflow:hidden; }
+th, td { padding:10px; border-bottom:1px solid #eee; font-size: 14px; }
+th { text-align:left; background:#fafafa; }
+.cards { display:flex; gap:12px; margin-top:14px; }
+.card { background:#fff; padding:14px; border-radius:12px; text-decoration:none; color:#111; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+.flash { margin: 10px 0; }
+.flash-item { padding:10px; border-radius:10px; margin-bottom:8px; background:#fff; }
+.flash-item.ok { border-left: 6px solid #0a5; }
+.flash-item.error { border-left: 6px solid #d33; }
