@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from datetime import datetime, date
 from config import Config, TIPOS_RODADO
-from models import db, Motorista, Veiculo, DispMotorista, DispVeiculo
+from models import db, Motorista, Veiculo, DispMotoristaDia, DispVeiculo
 
 def parse_date(s: str) -> date:
     return datetime.strptime(s, "%Y-%m-%d").date()
@@ -215,3 +215,4 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
     app.run(debug=True)
+
