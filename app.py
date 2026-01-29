@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from datetime import datetime, date
+import csv
+import io
 
 from config import Config, TIPOS_RODADO
 from models import (
@@ -26,6 +28,67 @@ def create_app():
         d = request.args.get("data")
         data_ref = parse_date(d) if d else date.today()
         return render_template("index.html", data_ref=data_ref)
+
+    # ---------------- IMPORTAÇÃO (em lote) ----------------
+    @app.get("/importar")
+    def importar():
+        return render_template("importar.html")
+
+    @app.post("/importar/veiculos")
+    def importar_veiculos():
+        csv_text = request.form.get("csv_veiculos", "")
+        if not csv_text.strip():
+            flash("Cole o CSV de veículos.", "error")
+            return redirect(url_for("importar"))
+
+        f = io.StringIO(csv_text)
+        reader = csv.DictReader(f)
+        count = 0
+
+        for row in reader:
+            placa = (row.get("placa") or "").strip().upper()
+            modelo = (row.get("modelo") or "").strip()
+            base = (row.get("base") or "").strip()
+            tipo = (row.get("tipo_rodado") or "").strip()
+
+            if not placa or not base or not tipo:
+                continue
+
+            if not Veiculo.query.filter_by(placa=placa).first():
+                db.session.add(Veiculo(placa=placa, modelo=modelo, base=base, tipo_rodado=tipo))
+                count += 1
+
+        db.session.commit()
+        flash(f"Veículos importados: {count}", "ok")
+        return redirect(url_for("veiculos"))
+
+    @app.post("/importar/motoristas")
+    def importar_motoristas():
+        csv_text = request.form.get("csv_motoristas", "")
+        if not csv_text.strip():
+            flash("Cole o CSV de motoristas.", "error")
+            return redirect(url_for("importar"))
+
+        f = io.StringIO(csv_text)
+        reader = csv.DictReader(f)
+        count = 0
+
+        for row in reader:
+            nome = (row.get("nome") or "").strip()
+            base = (row.get("base") or "").strip()
+            cnh = (row.get("cnh_categoria") or "").strip()
+
+            if not nome or not base:
+                continue
+
+            # evita duplicar por nome + base
+            if not Motorista.query.filter_by(nome=nome, base=base).first():
+                db.session.add(Motorista(nome=nome, base=base, cnh_categoria=cnh))
+                count += 1
+
+        db.session.commit()
+        flash(f"Motoristas importados: {count}", "ok")
+        return redirect(url_for("motoristas"))
 
     # ---------------- Motoristas ----------------
     @app.get("/motoristas")
@@ -203,8 +266,6 @@ def create_app():
         linhas = []
         for t in TIPOS_RODADO:
             v = int(veic_map.get(t, 0))
-            # enquanto não definirmos tipo principal do motorista, repetimos o total
-            # (depois melhoramos para consolidado por tipo)
             m = int(mot_total)
 
             if v == 0 and m == 0:
