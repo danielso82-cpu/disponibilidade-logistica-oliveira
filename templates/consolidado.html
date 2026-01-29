@@ -14,17 +14,18 @@
       <th>Status</th>
     </tr>
   </thead>
-  <tbody>
-    {% for l in linhas %}
-      <tr>
-        <td>{{ l.tipo }}</td>
-        <td>{{ l.veiculos_disp }}</td>
-        <td>{{ l.veiculos_indisp }}</td>
-        <td>{{ l.motoristas_disp }}</td>
-        <td>{{ l.motoristas_indisp }}</td>
-        <td>{{ l.status }}</td>
-      </tr>
-    {% endfor %}
-  </tbody>
+<tbody>
+  {% for l in linhas %}
+    <tr>
+      <td>{{ l.tipo }}</td>
+      <td>{{ l.veic_disp }}</td>
+      <td>{{ l.veic_indisp }}</td>
+      <td>{{ l.mot_disp }}</td>
+      <td>{{ l.mot_indisp }}</td>
+      <td>{{ l.status }}</td>
+    </tr>
+  {% endfor %}
+</tbody>
 </table>
 {% endblock %}
+
