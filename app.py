@@ -206,13 +206,13 @@ def create_app():
             regs_map=regs_map,
         )
 
-@app.post("/disponibilidade/veiculos/salvar")
-def disp_veiculos_salvar():
-    data_ref = parse_date(request.form["data_operacao"])
+    @app.post("/disponibilidade/veiculos/salvar")
+    def disp_veiculos_salvar():
+        data_ref = parse_date(request.form["data_operacao"])
 
-    # Apaga registros do dia e recria (fonte da verdade = formulário)
-    DispVeiculo.query.filter_by(data_operacao=data_ref).delete()
-    db.session.commit()
+        # Apaga registros do dia e recria (fonte da verdade = formulário)
+        DispVeiculo.query.filter_by(data_operacao=data_ref).delete()
+        db.session.commit()
 
     veiculo_ids = request.form.getlist("veiculo_id")
     if not veiculo_ids:
@@ -302,6 +302,7 @@ def disp_veiculos_salvar():
 if __name__ == "__main__":
     app = create_app()
     app.run(debug=True)
+
 
 
 
