@@ -268,7 +268,8 @@ def create_app():
             return redirect(url_for("index"))
         data_ref = parse_date(d)
 
-        veiculos_disp = (
+    # ------- VEÍCULOS: disponível por tipo -------
+        veic_disp_rows = (
             db.session.query(Veiculo.tipo_rodado, db.func.count(DispVeiculo.id))
             .join(DispVeiculo, DispVeiculo.veiculo_id == Veiculo.id)
             .filter(DispVeiculo.data_operacao == data_ref)
@@ -276,32 +277,59 @@ def create_app():
             .group_by(Veiculo.tipo_rodado)
             .all()
         )
-        veic_map = {t: c for t, c in veiculos_disp}
+        veic_disp_map = {t: int(c) for t, c in veic_disp_rows}
 
-        mot_total = (
+    # Total de veículos cadastrados por tipo (base “real” do estoque)
+        veic_total_rows = (
+            db.session.query(Veiculo.tipo_rodado, db.func.count(Veiculo.id))
+            .group_by(Veiculo.tipo_rodado)
+            .all()
+        )
+        veic_total_map = {t: int(c) for t, c in veic_total_rows}
+
+    # ------- MOTORISTAS: disponível e total (no dia) -------
+        mot_disp = (
             db.session.query(db.func.count(DispMotoristaDia.id))
             .filter(DispMotoristaDia.data_operacao == data_ref)
             .filter(DispMotoristaDia.status == "Disponível")
             .scalar()
         ) or 0
 
+    # Total de motoristas cadastrados (base “real” do cadastro)
+        mot_total = (
+            db.session.query(db.func.count(Motorista.id)).scalar()
+        ) or 0
+
+    # Calcula indisponíveis
+        mot_indisp = max(0, mot_total - mot_disp)
+
         linhas = []
         for t in TIPOS_RODADO:
-            v = int(veic_map.get(t, 0))
-            m = int(mot_total)
+            v_total = int(veic_total_map.get(t, 0))
+            v_disp = int(veic_disp_map.get(t, 0))
+            v_indisp = max(0, v_total - v_disp)
 
-            if v == 0 and m == 0:
+        # Status comparando recursos disponíveis
+            if v_disp == 0 and mot_disp == 0:
                 status = "⛔ Indisponível"
-            elif v < m:
+            elif v_disp < mot_disp:
                 status = "🔴 Falta veículo"
-            elif v > m:
+            elif v_disp > mot_disp:
                 status = "⚠️ Falta motorista"
             else:
                 status = "✅ OK"
-            linhas.append({"tipo": t, "veiculos": v, "motoristas": m, "status": status})
+
+            linhas.append({
+                "tipo": t,
+                "veic_disp": v_disp,
+                "veic_indisp": v_indisp,
+                "mot_disp": int(mot_disp),
+                "mot_indisp": int(mot_indisp),
+                "status": status,
+            })
 
         return render_template("consolidado.html", data_ref=data_ref, linhas=linhas)
-
+    
     return app
 
 if __name__ == "__main__":
