@@ -206,39 +206,52 @@ def create_app():
             regs_map=regs_map,
         )
 
-    @app.post("/disponibilidade/veiculos/salvar")
-    def disp_veiculos_salvar():
-        data_ref = parse_date(request.form["data_operacao"])
+@app.post("/disponibilidade/veiculos/salvar")
+def disp_veiculos_salvar():
+    data_ref = parse_date(request.form["data_operacao"])
 
-        DispVeiculo.query.filter_by(data_operacao=data_ref).delete()
-        db.session.commit()
+    # Apaga registros do dia e recria (fonte da verdade = formulário)
+    DispVeiculo.query.filter_by(data_operacao=data_ref).delete()
+    db.session.commit()
 
-        veiculo_ids = request.form.getlist("veiculo_id")
-        disponiveis = set(request.form.getlist("disponivel_veic"))
-
-        statuses = request.form.getlist("status")
-        previsoes = request.form.getlist("previsao_liberacao")
-        obs_list = request.form.getlist("obs")
-
-for vid, st, pr, ob in zip(veiculo_ids, statuses, previsoes, obs_list):
-    if vid in disponiveis:
-        st_final = "Disponível"
-    else:
-        st_final = st or "Manutenção"
-
-    db.session.add(
-        DispVeiculo(
-            data_operacao=data_ref,
-            veiculo_id=int(vid),
-            status=st_final,
-            previsao_liberacao=(pr or "").strip() or None,
-            obs=(ob or "").strip() or None,
-        )
-    )
-
-        db.session.commit()
-        flash("Disponibilidade de veículos salva.", "ok")
+    veiculo_ids = request.form.getlist("veiculo_id")
+    if not veiculo_ids:
+        flash("ERRO: formulário não enviou veiculo_id. Verifique disp_veiculos.html.", "error")
         return redirect(url_for("disp_veiculos", data=data_ref.isoformat()))
+
+    disponiveis = set(request.form.getlist("disponivel_veic"))
+    statuses = request.form.getlist("status")
+    previsoes = request.form.getlist("previsao_liberacao")
+    obs_list = request.form.getlist("obs")
+
+    # Garante listas alinhadas
+    def pad(lst, n):
+        return lst + [""] * (n - len(lst))
+
+    n = len(veiculo_ids)
+    statuses = pad(statuses, n)
+    previsoes = pad(previsoes, n)
+    obs_list = pad(obs_list, n)
+
+    for vid, st, pr, ob in zip(veiculo_ids, statuses, previsoes, obs_list):
+        if vid in disponiveis:
+            st_final = "Disponível"
+        else:
+            st_final = st or "Manutenção"
+
+        db.session.add(
+            DispVeiculo(
+                data_operacao=data_ref,
+                veiculo_id=int(vid),
+                status=st_final,
+                previsao_liberacao=(pr or "").strip() or None,
+                obs=(ob or "").strip() or None,
+            )
+        )
+
+    db.session.commit()
+    flash("Disponibilidade de veículos salva.", "ok")
+    return redirect(url_for("disp_veiculos", data=data_ref.isoformat()))
 
     # ---------------- Consolidado ----------------
     @app.get("/consolidado")
@@ -289,5 +302,6 @@ for vid, st, pr, ob in zip(veiculo_ids, statuses, previsoes, obs_list):
 if __name__ == "__main__":
     app = create_app()
     app.run(debug=True)
+
 
 
