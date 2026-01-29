@@ -1,21 +1,24 @@
-{% extends "base.html" %}
-{% block content %}
-<h1>Consolidado do dia</h1>
-<p><b>Data de operação:</b> {{ data_ref.strftime("%d/%m/%Y") }}</p>
-
 <table>
   <thead>
-    <tr><th>Tipo Rodado</th><th>Veículos (Disponível)</th><th>Motoristas (Disponível)</th><th>Status</th></tr>
+    <tr>
+      <th>Tipo Rodado</th>
+      <th>Veículos (Disponível)</th>
+      <th>Veículos (Indisponível)</th>
+      <th>Motoristas (Disponível)</th>
+      <th>Motoristas (Indisponível)</th>
+      <th>Status</th>
+    </tr>
   </thead>
   <tbody>
-    {% for l in linhas %}
-      <tr>
-        <td>{{ l.tipo }}</td>
-        <td>{{ l.veiculos }}</td>
-        <td>{{ l.motoristas }}</td>
-        <td>{{ l.status }}</td>
-      </tr>
+    {% for r in linhas %}
+    <tr>
+      <td>{{ r.tipo }}</td>
+      <td>{{ r.veic_disp }}</td>
+      <td>{{ r.veic_indisp }}</td>
+      <td>{{ r.mot_disp }}</td>
+      <td>{{ r.mot_indisp }}</td>
+      <td>{{ r.status }}</td>
+    </tr>
     {% endfor %}
   </tbody>
 </table>
-{% endblock %}
