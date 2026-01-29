@@ -5,14 +5,23 @@
 
 <table>
   <thead>
-    <tr><th>Tipo Rodado</th><th>Veículos (Disponível)</th><th>Motoristas (Disponível)</th><th>Status</th></tr>
+    <tr>
+      <th>Tipo Rodado</th>
+      <th>Veículos (Disponível)</th>
+      <th>Veículos (Indisponível)</th>
+      <th>Motoristas (Disponível)</th>
+      <th>Motoristas (Indisponível)</th>
+      <th>Status</th>
+    </tr>
   </thead>
   <tbody>
     {% for l in linhas %}
       <tr>
         <td>{{ l.tipo }}</td>
-        <td>{{ l.veiculos }}</td>
-        <td>{{ l.motoristas }}</td>
+        <td>{{ l.veiculos_disp }}</td>
+        <td>{{ l.veiculos_indisp }}</td>
+        <td>{{ l.motoristas_disp }}</td>
+        <td>{{ l.motoristas_indisp }}</td>
         <td>{{ l.status }}</td>
       </tr>
     {% endfor %}
