@@ -220,20 +220,21 @@ def create_app():
         previsoes = request.form.getlist("previsao_liberacao")
         obs_list = request.form.getlist("obs")
 
-        for vid, st, pr, ob in zip(veiculo_ids, statuses, previsoes, obs_list):
-            if vid in disponiveis:
-    st_final = "Disponível"
-else:
-    st_final = st or "Manutenção"
-            db.session.add(
-                DispVeiculo(
-                    data_operacao=data_ref,
-                    veiculo_id=int(vid),
-                    status=st_final,
-                    previsao_liberacao=(pr or "").strip() or None,
-                    obs=(ob or "").strip() or None,
-                )
-            )
+for vid, st, pr, ob in zip(veiculo_ids, statuses, previsoes, obs_list):
+    if vid in disponiveis:
+        st_final = "Disponível"
+    else:
+        st_final = st or "Manutenção"
+
+    db.session.add(
+        DispVeiculo(
+            data_operacao=data_ref,
+            veiculo_id=int(vid),
+            status=st_final,
+            previsao_liberacao=(pr or "").strip() or None,
+            obs=(ob or "").strip() or None,
+        )
+    )
 
         db.session.commit()
         flash("Disponibilidade de veículos salva.", "ok")
@@ -288,4 +289,5 @@ else:
 if __name__ == "__main__":
     app = create_app()
     app.run(debug=True)
+
 
