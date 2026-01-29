@@ -221,7 +221,10 @@ def create_app():
         obs_list = request.form.getlist("obs")
 
         for vid, st, pr, ob in zip(veiculo_ids, statuses, previsoes, obs_list):
-            st_final = "Disponível" if vid in disponiveis else (st or "Manutenção")
+            if vid in disponiveis:
+    st_final = "Disponível"
+else:
+    st_final = st or "Manutenção"
             db.session.add(
                 DispVeiculo(
                     data_operacao=data_ref,
@@ -246,7 +249,7 @@ def create_app():
 
         # Veículos disponíveis por tipo
         veiculos_disp = (
-            db.session.query(Veiculo.tipo_rodado, db.func.count(Veiculo.id))
+            db.session.query(Veiculo.tipo_rodado, db.func.count(DispVeiculo.id))
             .join(DispVeiculo, DispVeiculo.veiculo_id == Veiculo.id)
             .filter(DispVeiculo.data_operacao == data_ref)
             .filter(DispVeiculo.status == "Disponível")
@@ -285,3 +288,4 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
     app.run(debug=True)
+
