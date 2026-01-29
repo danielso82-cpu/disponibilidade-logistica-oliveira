@@ -9,7 +9,7 @@ from models import (
     Motorista,
     Veiculo,
     DispVeiculo,
-    DispMotoristaDia,  # novo modelo
+    DispMotoristaDia,
 )
 
 def parse_date(s: str) -> date:
@@ -81,7 +81,6 @@ def create_app():
             if not nome or not base:
                 continue
 
-            # evita duplicar por nome + base
             if not Motorista.query.filter_by(nome=nome, base=base).first():
                 db.session.add(Motorista(nome=nome, base=base, cnh_categoria=cnh))
                 count += 1
@@ -160,7 +159,6 @@ def create_app():
     def disp_motoristas_salvar():
         data_ref = parse_date(request.form["data_operacao"])
 
-        # limpa e recria o dia
         DispMotoristaDia.query.filter_by(data_operacao=data_ref).delete()
         db.session.commit()
 
@@ -170,6 +168,15 @@ def create_app():
         statuses = request.form.getlist("status")
         periodos = request.form.getlist("periodo")
         obs_list = request.form.getlist("obs")
+
+        # blindagem alinhamento
+        def pad(lst, n):
+            return lst + [""] * (n - len(lst))
+
+        n = len(motorista_ids)
+        statuses = pad(statuses, n)
+        periodos = pad(periodos, n)
+        obs_list = pad(obs_list, n)
 
         for mid, st, p, ob in zip(motorista_ids, statuses, periodos, obs_list):
             st_final = "Disponível" if mid in disponiveis else (st or "Falta")
@@ -214,44 +221,44 @@ def create_app():
         DispVeiculo.query.filter_by(data_operacao=data_ref).delete()
         db.session.commit()
 
-    veiculo_ids = request.form.getlist("veiculo_id")
-    if not veiculo_ids:
-        flash("ERRO: formulário não enviou veiculo_id. Verifique disp_veiculos.html.", "error")
-        return redirect(url_for("disp_veiculos", data=data_ref.isoformat()))
+        veiculo_ids = request.form.getlist("veiculo_id")
+        if not veiculo_ids:
+            flash("ERRO: formulário não enviou veiculo_id. Verifique disp_veiculos.html.", "error")
+            return redirect(url_for("disp_veiculos", data=data_ref.isoformat()))
 
-    disponiveis = set(request.form.getlist("disponivel_veic"))
-    statuses = request.form.getlist("status")
-    previsoes = request.form.getlist("previsao_liberacao")
-    obs_list = request.form.getlist("obs")
+        disponiveis = set(request.form.getlist("disponivel_veic"))
+        statuses = request.form.getlist("status")
+        previsoes = request.form.getlist("previsao_liberacao")
+        obs_list = request.form.getlist("obs")
 
-    # Garante listas alinhadas
-    def pad(lst, n):
-        return lst + [""] * (n - len(lst))
+        # Garante listas alinhadas
+        def pad(lst, n):
+            return lst + [""] * (n - len(lst))
 
-    n = len(veiculo_ids)
-    statuses = pad(statuses, n)
-    previsoes = pad(previsoes, n)
-    obs_list = pad(obs_list, n)
+        n = len(veiculo_ids)
+        statuses = pad(statuses, n)
+        previsoes = pad(previsoes, n)
+        obs_list = pad(obs_list, n)
 
-    for vid, st, pr, ob in zip(veiculo_ids, statuses, previsoes, obs_list):
-        if vid in disponiveis:
-            st_final = "Disponível"
-        else:
-            st_final = st or "Manutenção"
+        for vid, st, pr, ob in zip(veiculo_ids, statuses, previsoes, obs_list):
+            if vid in disponiveis:
+                st_final = "Disponível"
+            else:
+                st_final = st or "Manutenção"
 
-        db.session.add(
-            DispVeiculo(
-                data_operacao=data_ref,
-                veiculo_id=int(vid),
-                status=st_final,
-                previsao_liberacao=(pr or "").strip() or None,
-                obs=(ob or "").strip() or None,
+            db.session.add(
+                DispVeiculo(
+                    data_operacao=data_ref,
+                    veiculo_id=int(vid),
+                    status=st_final,
+                    previsao_liberacao=(pr or "").strip() or None,
+                    obs=(ob or "").strip() or None,
+                )
             )
-        )
 
-    db.session.commit()
-    flash("Disponibilidade de veículos salva.", "ok")
-    return redirect(url_for("disp_veiculos", data=data_ref.isoformat()))
+        db.session.commit()
+        flash("Disponibilidade de veículos salva.", "ok")
+        return redirect(url_for("disp_veiculos", data=data_ref.isoformat()))
 
     # ---------------- Consolidado ----------------
     @app.get("/consolidado")
@@ -261,7 +268,6 @@ def create_app():
             return redirect(url_for("index"))
         data_ref = parse_date(d)
 
-        # Veículos disponíveis por tipo
         veiculos_disp = (
             db.session.query(Veiculo.tipo_rodado, db.func.count(DispVeiculo.id))
             .join(DispVeiculo, DispVeiculo.veiculo_id == Veiculo.id)
@@ -272,7 +278,6 @@ def create_app():
         )
         veic_map = {t: c for t, c in veiculos_disp}
 
-        # Motoristas disponíveis (total)
         mot_total = (
             db.session.query(db.func.count(DispMotoristaDia.id))
             .filter(DispMotoristaDia.data_operacao == data_ref)
@@ -302,7 +307,3 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
     app.run(debug=True)
-
-
-
-
