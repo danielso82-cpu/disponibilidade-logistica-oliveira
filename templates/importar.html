@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Importar Frota e Motoristas</h1>
+
+<p style="margin-top:0;">Cole os CSVs e clique em Importar. (Não precisa cadastrar 1 por 1.)</p>
+
+<div style="margin: 16px 0;">
+  <h3>Veículos</h3>
+  <p>Colunas: <code>placa,modelo,base,tipo_rodado</code></p>
+  <form method="post" action="{{ url_for('importar_veiculos') }}">
+    <textarea name="csv_veiculos" rows="10" style="width:100%;" placeholder="Cole aqui o CSV de veículos..."></textarea>
+    <button type="submit">Importar Veículos</button>
+  </form>
+</div>
+
+<div style="margin: 16px 0;">
+  <h3>Motoristas</h3>
+  <p>Colunas: <code>nome,base</code></p>
+  <form method="post" action="{{ url_for('importar_motoristas') }}">
+    <textarea name="csv_motoristas" rows="10" style="width:100%;" placeholder="Cole aqui o CSV de motoristas..."></textarea>
+    <button type="submit">Importar Motoristas</button>
+  </form>
+</div>
+
+{% endblock %}
